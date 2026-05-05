@@ -1,84 +1,232 @@
-# 🎥 AI Surveillance System (YOLOv8 + Streamlit)
+# AI Surveillance System
 
-A real-time AI-powered surveillance system that detects objects, analyzes threats, generates alerts, records video, and produces reports.
+<div align="center">
 
----
+[![Live Demo](https://img.shields.io/badge/Live-Demo-blue.svg)](#local-setup)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red?logo=streamlit&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer_Vision-5C3EE8?logo=opencv&logoColor=white)
+![YOLOv8](https://img.shields.io/badge/Ultralytics-YOLOv8-00A9CE)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## 🚀 Features
+Real-time AI surveillance for live camera or uploaded video. The app detects selected objects, scores threat levels, triggers alerts, captures screenshots, records video, and generates exportable reports.
 
-* 🎯 Real-time object detection using YOLOv8
-* 📊 Threat level calculation (Safe / Medium / High)
-* 🔴 Automatic alert system with sound
-* 📸 Screenshot capture on suspicious activity
-* 🎥 Video recording with download option
-* 📈 Threat timeline analytics dashboard
-* 📄 Export reports (CSV & TXT)
-* 🧠 Behavior-based risk analysis
+Repository: [AI-Surveillance-System](https://github.com/ManikantaPerla07/AI-Surveillance-System)
 
----
+</div>
 
-## 🛠 Tech Stack
+## Table of Contents
 
-* Python
-* OpenCV
-* Ultralytics YOLOv8
-* Streamlit
-* NumPy / Pandas
+- [Overview](#overview)
+- [Feature Highlights](#feature-highlights)
+- [How It Works](#how-it-works)
+- [Architecture](#architecture)
+- [Architecture Diagram](#architecture-diagram)
+- [Screenshots](#screenshots)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Run Locally](#run-locally)
+- [Configuration Notes](#configuration-notes)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [Author](#author)
 
----
+## Overview
 
-## ⚙️ Setup Instructions
+AI Surveillance System is a Streamlit-based monitoring dashboard that uses YOLOv8 to detect selected objects in real time from a webcam or uploaded video. It is designed to surface suspicious activity through threat scoring, visual alerts, screenshots, recorded video, and downloadable reports.
+
+## Feature Highlights
+
+- Real-time object detection with bounding boxes.
+- Threat scoring with Safe, Medium, and High risk states.
+- Automatic alert generation with optional sound.
+- Screenshot capture when a threat spike is detected.
+- Session video recording with download support.
+- Threat timeline analytics and event summaries.
+- CSV and TXT report export.
+- Live camera and uploaded video workflows.
+
+## How It Works
+
+1. The app reads frames from the default camera or from an uploaded video file.
+2. YOLOv8 detects objects in each frame.
+3. The app filters detections to allowed classes and calculates a threat score.
+4. If the score crosses the alert threshold, the system logs the event, saves a screenshot, and can play an alarm.
+5. The Streamlit UI shows annotated frames, analytics, and report controls.
+
+## Architecture
+
+The app follows a simple capture, detect, score, alert, and report pipeline.
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+	A[Webcam or Uploaded Video] --> B[Frame Capture]
+	B --> C[YOLOv8 Inference]
+	C --> D[Filter Allowed Objects]
+	D --> E[Threat Scoring]
+	E --> F{Threat >= Threshold?}
+	F -- Yes --> G[Trigger Alert]
+	G --> H[Save Screenshot]
+	G --> I[Play Alarm]
+	G --> J[Log Suspicious Event]
+	F -- No --> K[Continue Monitoring]
+	J --> L[Analytics Dashboard]
+	H --> L
+	I --> L
+	K --> L
+	L --> M[CSV / TXT Export]
+```
+
+```mermaid
+sequenceDiagram
+	participant U as User
+	participant S as Streamlit App
+	participant M as YOLOv8 Model
+	participant C as Camera/Video
+
+	U->>S: Start live camera or upload video
+	S->>C: Read next frame
+	S->>M: Run object detection
+	M-->>S: Return detections
+	S->>S: Calculate threat score
+	alt Threat is high
+		S->>S: Save screenshot and log alert
+		S->>S: Play alarm sound
+	end
+	S-->>U: Render annotated frame and dashboard
+```
+
+## Screenshots
+
+Current screenshots are stored in the `screenshots/` folder.
+
+### Live Detection
+
+![Live Detection](screenshots/live.png)
+
+### Dashboard
+
+![Dashboard](screenshots/dashboard.png)
+
+### Threat Timeline
+
+![Threat Timeline](screenshots/timeline.png)
+
+### Event Summary
+
+![Event Summary](screenshots/event.png)
+
+### Export Report
+
+![Export Report](screenshots/export.png)
+
+### Alert Snapshots
+
+![Alert Snapshots](screenshots/alerts.png)
+
+## Tech Stack
+
+- Python 3.11+
+- Streamlit
+- Ultralytics YOLOv8
+- OpenCV
+- NumPy
+- Pandas
+- scikit-learn
+
+## Project Structure
+
+```text
+.
+├── app.py
+├── core.py
+├── utils.py
+├── generate_alarm.py
+├── requirements.txt
+├── README.md
+├── alarm.wav
+├── screenshots/
+└── test_yolo.py
+```
+
+## Run Locally
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/punithkarri/AI-Surveillance-System.git
+git clone https://github.com/ManikantaPerla07/AI-Surveillance-System.git
 cd AI-Surveillance-System
+```
+
+### 2. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+### 3. Start the app
+
+```bash
 streamlit run app.py
 ```
 
-👉 YOLO model will download automatically on first run.
+### 4. Open the app
 
----
+Streamlit will print a local URL in the terminal, usually:
 
-## 📊 Output Features
+```text
+http://localhost:8501
+```
 
-* Live detection with bounding boxes
-* Threat scoring system
-* Event summary dashboard
-* Downloadable reports
-* Alert screenshots
+## Usage Guide
 
----
+### Live Camera Mode
 
-## 📸 Demo (Add Screenshots Here)
+- Choose `Live Camera` in the sidebar.
+- Click `Start Camera` to begin monitoring.
+- Review the annotated frame, threat score, alerts, screenshots, and analytics.
+- Click `Stop Camera` to end the session.
 
-## 📸 Demo
+### Upload Video Mode
 
-### 🔍 Live Detection
-![Live](screenshots/live.png)
+- Choose `Upload Video` in the sidebar.
+- Upload an MP4, AVI, MOV, or MKV file.
+- Click `Analyze` to process the video.
+- Export reports once processing completes.
 
-### 📊 Analytics Dashboard
-![Dashboard](screenshots/dashboard.png)
+## Outputs
 
-### 📈 Threat Timeline
-![Timeline](screenshots/timeline.png)
+During a session, the app may create:
 
-### 📦 Event Summary
-![Event](screenshots/event.png)
+- Annotated frame previews inside the UI.
+- `output.avi` recorded session video.
+- Alert screenshots under `screenshots/`.
+- CSV report export.
+- TXT report export.
 
-### 📄 Export Report
-![Export](screenshots/export.png)
+## Configuration Notes
 
-### 🚨 Alert Snapshots
-![Alerts](screenshots/alerts.png)
-## 📌 Future Improvements
+- The model is loaded automatically from `yolov8s.pt` on first run.
+- Windows users can hear the alarm sound through `winsound`.
+- The live camera mode uses webcam index `0`.
+- The first startup may take longer while the model is downloaded.
 
-* Multi-camera support
-* Face recognition
-* Cloud deployment
-* Mobile alerts
+## Troubleshooting
 
----
+- If the camera does not open, close other apps that may be using the webcam.
+- If the model fails to load, confirm that `ultralytics` is installed and the machine can reach the internet for the first download.
+- If Streamlit does not open automatically, manually visit `http://localhost:8501`.
 
-## 👨‍💻 Author
-Karri Punith
+## Roadmap
+
+- Multi-camera support.
+- Face recognition.
+- Cloud deployment.
+- Mobile notifications.
+- Role-based access and audit logs.
+
+## Author
+
+Manikanta Perla
