@@ -52,10 +52,25 @@ streamlit run app.py
 
 ## 📸 Demo (Add Screenshots Here)
 
-(Add your project screenshots here later)
+## 📸 Demo
 
----
+### 🔍 Live Detection
+![Live](screenshots/live.png)
 
+### 📊 Analytics Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### 📈 Threat Timeline
+![Timeline](screenshots/timeline.png)
+
+### 📦 Event Summary
+![Event](screenshots/event.png)
+
+### 📄 Export Report
+![Export](screenshots/export.png)
+
+### 🚨 Alert Snapshots
+![Alerts](screenshots/alerts.png)
 ## 📌 Future Improvements
 
 * Multi-camera support
