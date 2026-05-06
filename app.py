@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import streamlit as st
 import tempfile
 import threading
@@ -138,9 +140,14 @@ def get_shared_model():
                     print(ULTRALYTICS_IMPORT_ERROR)
                     return None
 
-                print("[YOLO] Attempting to load yolov8s.pt model...")
+                print("[YOLO] Attempting to load YOLO model...")
                 try:
-                    MODEL_INSTANCE = _YOLO("yolov8s.pt")
+                    model_path = "yolov8s.pt"
+                    if os.path.exists(model_path):
+                        MODEL_INSTANCE = _YOLO(model_path)
+                    else:
+                        # Auto-download yolov8s if local file not found
+                        MODEL_INSTANCE = _YOLO("yolov8s")
                     YOLO_LOAD_ERROR = None
                     print("[YOLO] ✓ Model loaded successfully")
                 except Exception as e:
