@@ -8,7 +8,6 @@ from pathlib import Path
 from collections import deque
 import numpy as np
 from datetime import datetime
-from ultralytics import YOLO
 import io
 import threading
 
@@ -118,7 +117,20 @@ def get_shared_model():
     if MODEL_INSTANCE is None:
         with MODEL_LOCK:
             if MODEL_INSTANCE is None:
-                MODEL_INSTANCE = YOLO("yolov8s.pt")
+                try:
+                    # Import here to avoid importing at module import time (prevents app crash
+                    # when cv2/system GL libraries are missing at startup)
+                    from ultralytics import YOLO as _YOLO
+                except Exception as e:
+                    st.error("Failed to import Ultralytics/YOLO. Full error in logs.")
+                    st.warning("If you're on Streamlit Cloud, ensure only headless OpenCV is installed (opencv-python-headless) or rebuild the app.")
+                    return None
+
+                try:
+                    MODEL_INSTANCE = _YOLO("yolov8s.pt")
+                except Exception as e:
+                    st.error("Failed to load YOLO model. Full error in logs.")
+                    return None
     return MODEL_INSTANCE
 
 # ============================================================
