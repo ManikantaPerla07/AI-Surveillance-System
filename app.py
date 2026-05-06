@@ -10,6 +10,7 @@ import numpy as np
 from datetime import datetime
 import io
 import threading
+import traceback
 
 try:
     import cv2
@@ -24,11 +25,16 @@ except ImportError:
 try:
     from streamlit_webrtc import WebRtcMode, VideoProcessorBase, webrtc_streamer
     WEBRTC_AVAILABLE = True
-except ImportError:
+except Exception:
     WebRtcMode = None
     VideoProcessorBase = object
     webrtc_streamer = None
     WEBRTC_AVAILABLE = False
+    WEBRTC_IMPORT_ERROR = traceback.format_exc()
+else:
+    WEBRTC_IMPORT_ERROR = None
+
+ULTRALYTICS_IMPORT_ERROR = None
 
 try:
     import winsound
@@ -121,14 +127,17 @@ def get_shared_model():
                     # Import here to avoid importing at module import time (prevents app crash
                     # when cv2/system GL libraries are missing at startup)
                     from ultralytics import YOLO as _YOLO
-                except Exception as e:
+                    ULTRALYTICS_IMPORT_ERROR = None
+                except Exception:
+                    ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
                     st.error("Failed to import Ultralytics/YOLO. Full error in logs.")
                     st.warning("If you're on Streamlit Cloud, ensure only headless OpenCV is installed (opencv-python-headless) or rebuild the app.")
                     return None
 
                 try:
                     MODEL_INSTANCE = _YOLO("yolov8s.pt")
-                except Exception as e:
+                except Exception:
+                    ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
                     st.error("Failed to load YOLO model. Full error in logs.")
                     return None
     return MODEL_INSTANCE
@@ -437,6 +446,16 @@ with st.sidebar:
         st.success("âœ“ Model Loaded (YOLOv8s)")
     else:
         st.error("âœ— Model Failed")
+
+    # Debug: show import tracebacks if present
+    if ULTRALYTICS_IMPORT_ERROR or WEBRTC_IMPORT_ERROR:
+        with st.expander("Debug: import tracebacks (click to expand)"):
+            if ULTRALYTICS_IMPORT_ERROR:
+                st.markdown("**Ultralytics import/load error:**")
+                st.code(ULTRALYTICS_IMPORT_ERROR)
+            if WEBRTC_IMPORT_ERROR:
+                st.markdown("**streamlit-webrtc import error:**")
+                st.code(WEBRTC_IMPORT_ERROR)
 
     st.markdown("---")
     st.markdown("**Settings:**")
