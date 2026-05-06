@@ -23,11 +23,12 @@ except ImportError:
     av = None
 
 try:
-    from streamlit_webrtc import WebRtcMode, VideoProcessorBase, webrtc_streamer
+    from streamlit_webrtc import WebRtcMode, VideoProcessorBase, get_available_ice_servers, webrtc_streamer
     WEBRTC_AVAILABLE = True
 except Exception:
     WebRtcMode = None
     VideoProcessorBase = object
+    get_available_ice_servers = None
     webrtc_streamer = None
     WEBRTC_AVAILABLE = False
     WEBRTC_IMPORT_ERROR = traceback.format_exc()
@@ -477,9 +478,14 @@ if mode == "ðŸŒ Browser Webcam":
         st.error("streamlit-webrtc is not installed. Install dependencies to use browser webcam mode.")
     else:
         st.info("Click Start to grant camera access in your browser. This works on Streamlit Cloud.")
+        rtc_configuration = None
+        if get_available_ice_servers is not None:
+            rtc_configuration = {"iceServers": get_available_ice_servers()}
+
         webrtc_ctx = webrtc_streamer(
             key="browser-webcam",
             mode=WebRtcMode.SENDRECV,
+            rtc_configuration=rtc_configuration,
             media_stream_constraints={"video": True, "audio": False},
             video_processor_factory=BrowserWebcamProcessor,
             async_processing=True,
