@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import tempfile
 import threading
 import time
@@ -12,6 +11,11 @@ from datetime import datetime
 from ultralytics import YOLO
 import io
 import threading
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 try:
     import av

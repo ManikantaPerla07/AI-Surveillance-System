@@ -1,7 +1,8 @@
 ultralytics
-opencv-python
+opencv-python-headless
 streamlit
 streamlit-webrtc
 scikit-learn
 numpy
 pandas
+Pillow
