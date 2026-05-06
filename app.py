@@ -36,6 +36,7 @@ else:
     WEBRTC_IMPORT_ERROR = None
 
 ULTRALYTICS_IMPORT_ERROR = None
+YOLO_LOAD_ERROR = None
 
 try:
     import winsound
@@ -120,29 +121,36 @@ init_session_state()
 
 def get_shared_model():
     """Load the YOLO model once and reuse it across app reruns and webcam workers."""
-    global MODEL_INSTANCE
+    global MODEL_INSTANCE, ULTRALYTICS_IMPORT_ERROR, YOLO_LOAD_ERROR
+    
     if MODEL_INSTANCE is None:
         with MODEL_LOCK:
             if MODEL_INSTANCE is None:
+                print("[YOLO] Attempting to import ultralytics...")
                 try:
-                    # Import here to avoid importing at module import time (prevents app crash
-                    # when cv2/system GL libraries are missing at startup)
                     from ultralytics import YOLO as _YOLO
                     ULTRALYTICS_IMPORT_ERROR = None
-                except Exception:
+                    print("[YOLO] ✓ ultralytics imported successfully")
+                except Exception as e:
                     ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
-                    print("ultralytics import failed:\n" + ULTRALYTICS_IMPORT_ERROR)
-                    st.error("Failed to import Ultralytics/YOLO. Full error in logs.")
-                    st.warning("If you're on Streamlit Cloud, ensure only headless OpenCV is installed (opencv-python-headless) or rebuild the app.")
+                    print("[YOLO] ✗ Failed to import ultralytics:")
+                    print(ULTRALYTICS_IMPORT_ERROR)
                     return None
 
+                print("[YOLO] Attempting to load yolov8s.pt model...")
                 try:
                     MODEL_INSTANCE = _YOLO("yolov8s.pt")
-                except Exception:
-                    ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
-                    print("ultralytics model load failed:\n" + ULTRALYTICS_IMPORT_ERROR)
-                    st.error("Failed to load YOLO model. Full error in logs.")
+                    YOLO_LOAD_ERROR = None
+                    print("[YOLO] ✓ Model loaded successfully")
+                except Exception as e:
+                    YOLO_LOAD_ERROR = traceback.format_exc()
+                    print("[YOLO] ✗ Failed to load model:")
+                    print(YOLO_LOAD_ERROR)
+                    MODEL_INSTANCE = None
                     return None
+    else:
+        print(f"[YOLO] Model already loaded: {MODEL_INSTANCE}")
+    
     return MODEL_INSTANCE
 
 # ============================================================
@@ -162,7 +170,9 @@ class BrowserWebcamProcessor(VideoProcessorBase):
     """Process frames coming from the browser webcam."""
 
     def __init__(self):
+        print("[BrowserWebcamProcessor] Initializing processor...")
         self.model = get_shared_model()
+        print(f"[BrowserWebcamProcessor] Model loaded: {self.model is not None}")
         self.alert_count = 0
         self.suspicious_events = []
         self.threat_history = deque(maxlen=100)
@@ -312,21 +322,29 @@ def draw_boxes(frame, detections):
 
 def process_frame(frame, model):
     """Detect objects in frame."""
-    if frame is None or model is None:
+    if frame is None:
+        return frame, [], 0
+    
+    if model is None:
+        print("[process_frame] Model is None, skipping detection")
         return frame, [], 0
 
     try:
         if cv2 is None:
+            print("[process_frame] cv2 is None")
             return frame, [], 0
         frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
     except Exception as e:
-        print(f"Frame resize error: {e}")
+        print(f"[process_frame] Frame resize error: {e}")
         return frame, [], 0
 
     try:
+        print(f"[process_frame] Running YOLO inference on frame shape {frame.shape}...")
         results = model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)
+        print(f"[process_frame] Inference complete, got {len(results)} results")
     except Exception as e:
-        print(f"Model inference error: {e}")
+        print(f"[process_frame] Model inference error: {e}")
+        print(traceback.format_exc())
         return frame, [], 0
 
     detections = []
@@ -483,11 +501,14 @@ with st.sidebar:
         st.error("âœ— Model Failed")
 
     # Debug: show import tracebacks if present
-    if ULTRALYTICS_IMPORT_ERROR or WEBRTC_IMPORT_ERROR:
+    if ULTRALYTICS_IMPORT_ERROR or YOLO_LOAD_ERROR or WEBRTC_IMPORT_ERROR:
         with st.expander("Debug: import tracebacks (click to expand)"):
             if ULTRALYTICS_IMPORT_ERROR:
-                st.markdown("**Ultralytics import/load error:**")
+                st.markdown("**Ultralytics import error:**")
                 st.code(ULTRALYTICS_IMPORT_ERROR)
+            if YOLO_LOAD_ERROR:
+                st.markdown("**YOLO model load error:**")
+                st.code(YOLO_LOAD_ERROR)
             if WEBRTC_IMPORT_ERROR:
                 st.markdown("**streamlit-webrtc import error:**")
                 st.code(WEBRTC_IMPORT_ERROR)
