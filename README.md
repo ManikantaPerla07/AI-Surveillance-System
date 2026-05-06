@@ -44,7 +44,7 @@ AI Surveillance System is a Streamlit-based monitoring dashboard that uses YOLOv
 - Session video recording with download support.
 - Threat timeline analytics and event summaries.
 - CSV and TXT report export.
-- Live camera and uploaded video workflows.
+- Browser webcam, local camera, and uploaded video workflows.
 
 ## How It Works
 
@@ -140,15 +140,15 @@ Current screenshots are stored in the `screenshots/` folder.
 
 ```text
 .
-├── app.py
-├── core.py
-├── utils.py
-├── generate_alarm.py
-├── requirements.txt
-├── README.md
-├── alarm.wav
-├── screenshots/
-└── test_yolo.py
+â”œâ”€â”€ app.py
+â”œâ”€â”€ core.py
+â”œâ”€â”€ utils.py
+â”œâ”€â”€ generate_alarm.py
+â”œâ”€â”€ requirements.txt
+â”œâ”€â”€ README.md
+â”œâ”€â”€ alarm.wav
+â”œâ”€â”€ screenshots/
+â””â”€â”€ test_yolo.py
 ```
 
 ## Run Locally
@@ -182,12 +182,18 @@ http://localhost:8501
 
 ## Usage Guide
 
-### Live Camera Mode
+### Browser Webcam Mode
 
-- Choose `Live Camera` in the sidebar.
-- Click `Start Camera` to begin monitoring.
-- Review the annotated frame, threat score, alerts, screenshots, and analytics.
-- Click `Stop Camera` to end the session.
+- Choose `Browser Webcam` in the sidebar.
+- Click `Start` in the Streamlit WebRTC widget and allow camera access in the browser.
+- Review the annotated stream, threat score, alerts, screenshots, and analytics.
+- Click `Stop` to end the session.
+
+### Local Camera Mode
+
+- Choose `Local Camera` in the sidebar.
+- Click `Start Camera` to begin monitoring from the machine running Streamlit.
+- Use this only when the app is running on a device that physically has the camera attached.
 
 ### Upload Video Mode
 
@@ -210,7 +216,8 @@ During a session, the app may create:
 
 - The model is loaded automatically from `yolov8s.pt` on first run.
 - Windows users can hear the alarm sound through `winsound`.
-- The live camera mode uses webcam index `0`.
+- The browser webcam mode is the deployment-safe option and should be used on Streamlit Cloud.
+- The local camera mode uses webcam index `0` and is only for machines that physically have the camera attached.
 - The first startup may take longer while the model is downloaded.
 
 ## Troubleshooting

@@ -1,6 +1,7 @@
 ultralytics
 opencv-python
 streamlit
+streamlit-webrtc
 scikit-learn
 numpy
 pandas
