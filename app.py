@@ -187,53 +187,72 @@ class BrowserWebcamProcessor(VideoProcessorBase):
             self.video_writer = None
 
     def recv(self, frame):
-        if av is None:
-            return frame
+        try:
+            if av is None:
+                return frame
 
-        frame_np = frame.to_ndarray(format="bgr24")
-        processed_frame, detections, threat = process_frame(frame_np.copy(), self.model)
-        processed_frame = draw_boxes(processed_frame, detections)
-
-        self._ensure_writer(processed_frame.shape)
-        if self.video_writer is not None:
-            self.video_writer.write(processed_frame)
-
-        self.frame_count += 1
-        self.threat_history.append(threat)
-
-        alert_spike = threat > ALERT_THREAT_THRESHOLD and self.last_threat_score <= ALERT_THREAT_THRESHOLD
-        if alert_spike:
-            self.alert_count += 1
-            current_time = time.time()
-
-            for det in detections:
-                if det["label"] in THREAT_CLASSES:
-                    self.suspicious_events.append({
-                        "label": det["label"],
-                        "threat": int(det["conf"] * 100),
-                        "time": current_time,
-                    })
-
-            if len(self.screenshots) < 10:
-                Path("screenshots").mkdir(exist_ok=True)
-                path = f"screenshots/browser_{int(current_time * 1000)}.jpg"
+            frame_np = frame.to_ndarray(format="bgr24")
+            processed_frame, detections, threat = process_frame(frame_np.copy(), self.model)
+            
+            # Draw boxes safely
+            if processed_frame is not None and cv2 is not None:
+                processed_frame = draw_boxes(processed_frame, detections)
+            
+            # Write video safely
+            if cv2 is not None:
                 try:
-                    cv2.imwrite(path, processed_frame)
-                    self.screenshots.append(path)
-                except Exception:
-                    pass
+                    self._ensure_writer(processed_frame.shape)
+                    if self.video_writer is not None:
+                        self.video_writer.write(processed_frame)
+                except Exception as e:
+                    print(f"Video write error: {e}")
+                    self.video_writer = None
 
-            if winsound and not self.alarm_active:
-                self.alarm_active = True
-                try:
-                    threading.Thread(target=play_alarm, daemon=True).start()
-                except Exception:
-                    pass
-        else:
-            self.alarm_active = False
+            self.frame_count += 1
+            self.threat_history.append(threat)
+            print(f"[Browser Webcam] Frame {self.frame_count} processed (threat={threat})")
 
-        self.last_threat_score = threat
-        return av.VideoFrame.from_ndarray(processed_frame, format="bgr24")
+            alert_spike = threat > ALERT_THREAT_THRESHOLD and self.last_threat_score <= ALERT_THREAT_THRESHOLD
+            if alert_spike:
+                self.alert_count += 1
+                current_time = time.time()
+
+                for det in detections:
+                    if det["label"] in THREAT_CLASSES:
+                        self.suspicious_events.append({
+                            "label": det["label"],
+                            "threat": int(det["conf"] * 100),
+                            "time": current_time,
+                        })
+
+                if len(self.screenshots) < 10 and cv2 is not None:
+                    Path("screenshots").mkdir(exist_ok=True)
+                    path = f"screenshots/browser_{int(current_time * 1000)}.jpg"
+                    try:
+                        cv2.imwrite(path, processed_frame)
+                        self.screenshots.append(path)
+                    except Exception as e:
+                        print(f"Screenshot error: {e}")
+
+                if winsound and not self.alarm_active:
+                    self.alarm_active = True
+                    try:
+                        threading.Thread(target=play_alarm, daemon=True).start()
+                    except Exception:
+                        pass
+            else:
+                self.alarm_active = False
+
+            self.last_threat_score = threat
+            return av.VideoFrame.from_ndarray(processed_frame, format="bgr24")
+        except Exception as e:
+            print(f"[Browser Webcam] recv() error: {e}")
+            print(traceback.format_exc())
+            # Always return the original frame to keep stream alive
+            try:
+                return frame
+            except:
+                return av.VideoFrame.from_ndarray(np.zeros((FRAME_HEIGHT, FRAME_WIDTH, 3), dtype=np.uint8), format="bgr24")
 
 def play_alarm():
     """Play beep sound."""
@@ -260,29 +279,35 @@ def calculate_threat(detections):
 
 def draw_boxes(frame, detections):
     """Draw bounding boxes."""
-    for det in detections:
-        x1, y1, x2, y2 = det["bbox"]
-        label = det["label"]
-        conf = det["conf"]
+    if frame is None or cv2 is None:
+        return frame
+    
+    try:
+        for det in detections:
+            x1, y1, x2, y2 = det["bbox"]
+            label = det["label"]
+            conf = det["conf"]
 
-        # Color
-        if label in THREAT_CLASSES:
-            color = (0, 0, 255)  # RED
-        elif label == "person":
-            color = (0, 255, 0)  # GREEN
-        else:
-            color = (255, 0, 0)  # BLUE
+            # Color
+            if label in THREAT_CLASSES:
+                color = (0, 0, 255)  # RED
+            elif label == "person":
+                color = (0, 255, 0)  # GREEN
+            else:
+                color = (255, 0, 0)  # BLUE
 
-        # Box
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
+            # Box
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 3)
 
-        # Label
-        label_text = f"{label} {conf:.2f}"
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        text_size = cv2.getTextSize(label_text, font, 0.6, 2)[0]
-        cv2.rectangle(frame, (x1, y1 - 30), (x1 + text_size[0] + 10, y1), color, -1)
-        cv2.putText(frame, label_text, (x1 + 5, y1 - 8), font, 0.6, (255, 255, 255), 2)
-
+            # Label
+            label_text = f"{label} {conf:.2f}"
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            text_size = cv2.getTextSize(label_text, font, 0.6, 2)[0]
+            cv2.rectangle(frame, (x1, y1 - 30), (x1 + text_size[0] + 10, y1), color, -1)
+            cv2.putText(frame, label_text, (x1 + 5, y1 - 8), font, 0.6, (255, 255, 255), 2)
+    except Exception as e:
+        print(f"draw_boxes error: {e}")
+    
     return frame
 
 def process_frame(frame, model):
@@ -290,11 +315,18 @@ def process_frame(frame, model):
     if frame is None or model is None:
         return frame, [], 0
 
-    frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+    try:
+        if cv2 is None:
+            return frame, [], 0
+        frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+    except Exception as e:
+        print(f"Frame resize error: {e}")
+        return frame, [], 0
 
     try:
         results = model(frame, verbose=False, conf=CONFIDENCE_THRESHOLD)
-    except:
+    except Exception as e:
+        print(f"Model inference error: {e}")
         return frame, [], 0
 
     detections = []
