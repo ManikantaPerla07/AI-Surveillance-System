@@ -31,6 +31,7 @@ except Exception:
     webrtc_streamer = None
     WEBRTC_AVAILABLE = False
     WEBRTC_IMPORT_ERROR = traceback.format_exc()
+    print("streamlit_webrtc import failed:\n" + WEBRTC_IMPORT_ERROR)
 else:
     WEBRTC_IMPORT_ERROR = None
 
@@ -130,6 +131,7 @@ def get_shared_model():
                     ULTRALYTICS_IMPORT_ERROR = None
                 except Exception:
                     ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
+                    print("ultralytics import failed:\n" + ULTRALYTICS_IMPORT_ERROR)
                     st.error("Failed to import Ultralytics/YOLO. Full error in logs.")
                     st.warning("If you're on Streamlit Cloud, ensure only headless OpenCV is installed (opencv-python-headless) or rebuild the app.")
                     return None
@@ -138,6 +140,7 @@ def get_shared_model():
                     MODEL_INSTANCE = _YOLO("yolov8s.pt")
                 except Exception:
                     ULTRALYTICS_IMPORT_ERROR = traceback.format_exc()
+                    print("ultralytics model load failed:\n" + ULTRALYTICS_IMPORT_ERROR)
                     st.error("Failed to load YOLO model. Full error in logs.")
                     return None
     return MODEL_INSTANCE
