@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import tempfile
 import threading
@@ -59,7 +60,7 @@ FRAME_HEIGHT = 480
 # ============================================================
 # PAGE CONFIG
 # ============================================================
-st.set_page_config(page_title="AI Surveillance", page_icon="ðŸŽ¥", layout="wide")
+st.set_page_config(page_title="AI Surveillance", page_icon="\U0001F3A5", layout="wide")
 
 st.markdown("""
 <style>
@@ -481,7 +482,7 @@ def render_event_cards(summary):
 # ============================================================
 # UI HEADER
 # ============================================================
-st.title("ðŸŽ¥ AI Surveillance System")
+st.markdown("# 🎥 AI Surveillance System")
 st.markdown("Real-time YOLO detection + threat analysis")
 st.markdown("---")
 
